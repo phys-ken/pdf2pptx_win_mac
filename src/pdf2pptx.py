@@ -41,14 +41,14 @@ base, ext = os.path.splitext(fullPath)
 
 if ext == '.pdf' or ext == '.PDF':
     print(fullPath + "の変換を準備中...")
-    # figがあれば、一旦削除
-    if(os.path.isdir('fig') == True):
-        shutil.rmtree('fig')
+    # figtmpfigがあれば、一旦削除
+    if(os.path.isdir('figtmpfig') == True):
+        shutil.rmtree('figtmpfig')
     load = convert_from_path(fullPath)
-    if not os.path.exists("fig"):
-        # figを作る。
-        os.makedirs("fig")
-    img_file = "fig/output"
+    if not os.path.exists("figtmpfig"):
+        # figtmpfigを作る。
+        os.makedirs("figtmpfig")
+    img_file = "figtmpfig/output"
     for index, jpg in enumerate(load):
         jpg_name = img_file + '_' + '{0:03d}.jpg'.format(index)
         jpg.save(jpg_name)
@@ -60,7 +60,7 @@ else:
 
 
 # 画像ファイルの読み込み
-fnms = glob('./fig/*.jpg')
+fnms = glob('./figtmpfig/*.jpg')
 print(str(len(fnms)) + "枚の画像を処理します。")
 
 # ソート
@@ -102,5 +102,7 @@ for fnm in fnms:
 
 # 名前をつけて保存
 ppt.save(outputdir +  '/output.pptx')
-#shutil.rmtree('fig')
-print("変換が終わりました！！！ output.pptxを作成しました。")
+#shutil.rmtree('figtmpfig') winだとうごかない。
+print("変換が終わりました！！！ 出力フォルダにoutput.pptxを作成しました。")
+print("変換した画像を、" + os.getcwd() + "tmpfigtmpフォルダに入れてあります。")
+print("tmpfigtmpは、次回実行時に消されます。")
