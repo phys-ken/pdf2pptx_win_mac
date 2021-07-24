@@ -8,8 +8,9 @@
 * osに合わせて、dist_macかdist_winの中にあるファイルをダウンロードする。
 * ダブルクリックして起動(長いと2分くらいかかる。)
 * コマンドプロンプトに入力欄が表示されたら、パスを入力する。
+  * **ドラッグ＆ドロップ**でもOK!
 
-## 技術的なリファレンス
+## 作成の過程のメモ
 * windowsにpopplerをインストールする。
   * [stack overflow How to install Poppler on Windows?](https://stackoverflow.com/questions/18381713/how-to-install-poppler-on-windows)
     * 2020年6月27日の　Owen Schwartz　のアンサーが参考になった。popplerの最新版をbuildして、[Github](https://github.com/oschwartz10612/poppler-windows/releases)に上げてくれている。
