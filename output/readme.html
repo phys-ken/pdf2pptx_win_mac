@@ -378,14 +378,56 @@ code {
 </script>
 </head>
 <body>
+<h1 id="pdf%E3%82%92pptx%E3%81%AB%E4%B8%80%E6%9E%9A%E3%81%9A%E3%81%A4%E8%B2%BC%E3%82%8A%E4%BB%98%E3%81%91%E3%81%BE%E3%81%99">PDFをPPTXに一枚ずつ貼り付けます。</h1>
+<h2 id="%E3%81%A7%E3%81%8D%E3%82%8B%E3%81%93%E3%81%A8">できること</h2>
 <ul>
-<li>クロスコンパイルはできないことが判明</li>
-<li>windowsでも環境変数をチェックしたから、macと同じコードでinstallできる。</li>
-<li>ソースを圧縮して配布しよう。</li>
-<li>winについては、winで作成。</li>
+<li>pdfをjpegに変換します(内部処理)</li>
+<li>pptxファイルを作成します。スライドの縦横サイズを、PDFの一枚目と合わせます</li>
+<li>output.pptxを作成します。</li>
+</ul>
+<h2 id="%E4%BD%BF%E3%81%84%E6%96%B9">使い方</h2>
+<ul>
+<li>osに合わせて、dist_macかdist_winの中にあるファイルをダウンロードする。</li>
+<li>ダブルクリックして起動(長いと2分くらいかかる。)</li>
+<li>コマンドプロンプトに入力欄が表示されたら、パスを入力する。</li>
+</ul>
+<h2 id="%E6%8A%80%E8%A1%93%E7%9A%84%E3%81%AA%E3%83%AA%E3%83%95%E3%82%A1%E3%83%AC%E3%83%B3%E3%82%B9">技術的なリファレンス</h2>
+<ul>
+<li>
+<p>windowsにpopplerをインストールする。</p>
+<ul>
+<li><a href="https://stackoverflow.com/questions/18381713/how-to-install-poppler-on-windows">stack overflow How to install Poppler on Windows?</a>
+<ul>
+<li>2020年6月27日の　Owen Schwartz　のアンサーが参考になった。popplerの最新版をbuildして、<a href="https://github.com/oschwartz10612/poppler-windows/releases">Github</a>に上げてくれている。</li>
+<li>zipを展開して、C:user~ programfileの中にいれて、環境変数のPATHを通す。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>pdf2pptxをインストールする。</p>
+<ul>
+<li>popplerの環境変数を通した後に、<code>pip install pdf2image</code> でインストール。</li>
+</ul>
+</li>
+<li>
+<p>pyinstallerで、.pyを実行可能ファイルに変える。</p>
+<ul>
+<li><a href="https://teratail.com/questions/184343">teratail Pythonで、pipしたパッケージをインポートしている.pyファイルをexe化しても実行できない？</a>を参考に、hook-pptx.pyを作成</li>
+<li>以下のコードを実行</li>
+</ul>
+</li>
 </ul>
 <pre class="hljs"><code><div>pyinstaller --onefile --additional-hooks-dir hooks  main.py       
 </div></code></pre>
+<ul>
+<li>実行可能ファイルが重すぎるとき...
+<ul>
+<li>numpyやpandasも含まれてしまうらしい。仮想環境を変えて、必要なモジュールのみpip installしなおす。</li>
+<li><a href="https://qiita.com/napinoco/items/068ce8ef6ef4309966b1">この通り</a>にしました。</li>
+</ul>
+</li>
+</ul>
 
 </body>
 </html>
