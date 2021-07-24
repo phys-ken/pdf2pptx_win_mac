@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(['pdf2pptx.py'],
-             pathex=['C:\\Users\\user\\Documents\\GitHub\\pptx2pdf_win_mac\\src'],
+             pathex=['/Users/nagakurakenya/Documents/GitHub/pptx2pdf_win_mac/src'],
              binaries=[],
              datas=[],
              hiddenimports=[],
