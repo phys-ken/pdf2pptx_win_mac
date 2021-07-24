@@ -23,7 +23,7 @@
   * 以下のコードを実行
 
 ```
-pyinstaller --onefile --additional-hooks-dir hooks  main.py       
+pyinstaller --onefile --additional-hooks-dir hooks  pdf2pptx.py       
 ```
 
 * 実行可能ファイルが重すぎるとき...
