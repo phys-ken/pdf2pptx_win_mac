@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['/Users/nagakurakenya/Documents/pptx2pdf_クロスコンパイル'],
+             pathex=['/Users/nagakurakenya/Documents/pptx2pdf_win_mac/src'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -33,12 +33,8 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False,
+          console=True,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
           entitlements_file=None )
-app = BUNDLE(exe,
-             name='main.app',
-             icon=None,
-             bundle_identifier=None)

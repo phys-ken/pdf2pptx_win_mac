@@ -379,9 +379,11 @@ code {
 </head>
 <body>
 <ul>
-<li>クロスコンパイルをしてみた。</li>
-<li>今までのは全て破棄</li>
+<li>クロスコンパイルはできないことが判明</li>
+<li>windowsでも環境変数をチェックしたから、macと同じコードでinstallできる。</li>
 </ul>
+<pre class="hljs"><code><div>pyinstaller --onefile --additional-hooks-dir hooks  main.py       
+</div></code></pre>
 
 </body>
 </html>
