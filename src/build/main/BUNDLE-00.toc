@@ -1,3 +1,0 @@
-([('main',
-   '/Users/nagakurakenya/Documents/pptx2pdf_クロスコンパイル/dist/main',
-   'EXECUTABLE')],)
