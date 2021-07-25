@@ -5,12 +5,12 @@
 * output.pptxを作成します。
 
 ## 使い方
-* osに合わせて、dist_macかdist_winの中にあるファイルをダウンロードする。
-* ダブルクリックして起動(長いと2分くらいかかる。)
-* コマンドプロンプトに入力欄が表示されたら、パスを入力する。
+* [release](https://github.com/phys-ken/pptx2pdf_win_mac/releases)から、最新版をダウンロードしてください。
+* 実行可能ファイルをダブルクリックして起動(長いと2分くらいかかる。)
+* コマンドプロンプトに`PDFファイルのフルパスを入力してください>>>`が表示されたら、起動開始です。支持の通りに、入力、コピペをしてください。
   * **ドラッグ＆ドロップ**でもOK!
 
-## 作成の過程のメモ
+## 開発時のメモ
 * windowsにpopplerをインストールする。
   * [stack overflow How to install Poppler on Windows?](https://stackoverflow.com/questions/18381713/how-to-install-poppler-on-windows)
     * 2020年6月27日の　Owen Schwartz　のアンサーが参考になった。popplerの最新版をbuildして、[Github](https://github.com/oschwartz10612/poppler-windows/releases)に上げてくれている。
