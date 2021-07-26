@@ -12,6 +12,9 @@ import shutil
 from pdf2image import convert_from_path
 
 
+# popplerへの環境変数PATHを一時的に付与 ###################################
+poppler_path = os.path.join(os.getcwd(), "poppler-21.03.0", "Library",  "bin")
+os.environ["PATH"] += os.pathsep + poppler_path
 
 # 文字列から数値だけを取り出す
 def str2int(str):
@@ -20,7 +23,7 @@ def str2int(str):
 
 print("====================================================")
 print("PDFを、PowerPointに貼り付けます。_2021/07/24")
-print("author phys-ken    Twitter:@phys-ken")
+print("author phys-ken    Twitter:@phys_ken")
 print("====================================================")
 print("現在の作業フォルダは_"+os.getcwd() + "_です。")
 print("必要な情報を入力したら、Enterを押してください。")
