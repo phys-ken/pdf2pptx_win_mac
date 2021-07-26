@@ -47,7 +47,7 @@ if ext == '.pdf' or ext == '.PDF':
     # figtmpfigがあれば、一旦削除
     if(os.path.isdir('figtmpfig') == True):
         shutil.rmtree('figtmpfig')
-    load = convert_from_path(fullPath)
+    load = convert_from_path(fullPath ,poppler_path="poppler-21.03.0/Library/bin" )
     if not os.path.exists("figtmpfig"):
         # figtmpfigを作る。
         os.makedirs("figtmpfig")

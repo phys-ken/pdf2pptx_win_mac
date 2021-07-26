@@ -51,7 +51,7 @@
  [],
  False,
  False,
- 1627265545,
+ 1627271039,
  [('run.exe',
    'c:\\users\\user\\anaconda3\\envs\\fugafuga\\lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit\\run.exe',
    'EXECUTABLE')])
