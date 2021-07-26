@@ -30,3 +30,23 @@ pyinstaller --onefile --additional-hooks-dir hooks  pdf2pptx.py
 * 実行可能ファイルが重すぎるとき...
   * numpyやpandasも含まれてしまうらしい。仮想環境を変えて、必要なモジュールのみpip installしなおす。
   * [この通り](https://qiita.com/napinoco/items/068ce8ef6ef4309966b1)にしました。
+
+## popplerをpyinstallerに含めるには
+* popplerをまるごと`~~~.py`と同じフォルダに入れる。
+* pythonのスクリプト内で、popplerフォルダへの環境変数を通す。リンク１を参考に。
+* `pdf2image.convert_from_path(outputfile , popplerpath)`を指定する。
+`
+pdf2image.convert_from_path('path/to/pdf',poppler_path=r"path\to\poppler\bin") 
+`
+
+* 以下のコードで、一回コンパイルしてみる。
+  * `--add data`で、`~~~.py`から見たpopplerフォルダのの相対パスを指定する
+  * `--onefile`はうまくいかないらしいので、`--onedir`にする。
+```
+pyinstaller --onedir --additional-hooks-dir hooks  --add-data "poppler-21.03.0/*;./poppler"   pdf2pptx_win.py 
+```
+* ですが、まだこれだとうまくいかない！作成された.exeからみて、`poppler/bin`のフォルダがどこにあるかをみる。
+* それにあわせて、環境変数のパスと、`pdf2image.convert_from_path(outputfile , popplerpath)`のpoppler pathを修正する。
+
+* 以下のサイトが参考になった。
+* [リンク１](https://stackoverflow.com/questions/66303806/how-do-i-include-poppler-to-pyinstaller-generated-exe-when-using-pdf2image)

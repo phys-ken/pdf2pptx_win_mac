@@ -12,10 +12,6 @@ import shutil
 from pdf2image import convert_from_path
 
 
-# popplerへの環境変数PATHを一時的に付与 ###################################
-poppler_path = os.path.join(os.getcwd(), "poppler-21.03.0", "Library",  "bin")
-os.environ["PATH"] += os.pathsep + poppler_path
-
 # 文字列から数値だけを取り出す
 def str2int(str):
     i = int(re.search('\d+', str).group())
@@ -47,7 +43,7 @@ if ext == '.pdf' or ext == '.PDF':
     # figtmpfigがあれば、一旦削除
     if(os.path.isdir('figtmpfig') == True):
         shutil.rmtree('figtmpfig')
-    load = convert_from_path(fullPath ,poppler_path="poppler-21.03.0/Library/bin" )
+    load = convert_from_path(fullPath )
     if not os.path.exists("figtmpfig"):
         # figtmpfigを作る。
         os.makedirs("figtmpfig")

@@ -387,15 +387,15 @@ code {
 </ul>
 <h2 id="%E4%BD%BF%E3%81%84%E6%96%B9">使い方</h2>
 <ul>
-<li>osに合わせて、dist_macかdist_winの中にあるファイルをダウンロードする。</li>
-<li>ダブルクリックして起動(長いと2分くらいかかる。)</li>
-<li>コマンドプロンプトに入力欄が表示されたら、パスを入力する。
+<li><a href="https://github.com/phys-ken/pptx2pdf_win_mac/releases">release</a>から、最新版をダウンロードしてください。</li>
+<li>実行可能ファイルをダブルクリックして起動(長いと2分くらいかかる。)</li>
+<li>起動が完了すると、コマンドプロンプトに<code>PDFファイルのフルパスを入力してください&gt;&gt;&gt;</code>と表示されます。以降は、支持の通りに、入力・コピペをしてください。
 <ul>
 <li><strong>ドラッグ＆ドロップ</strong>でもOK!</li>
 </ul>
 </li>
 </ul>
-<h2 id="%E4%BD%9C%E6%88%90%E3%81%AE%E9%81%8E%E7%A8%8B%E3%81%AE%E3%83%A1%E3%83%A2">作成の過程のメモ</h2>
+<h2 id="%E9%96%8B%E7%99%BA%E6%99%82%E3%81%AE%E3%83%A1%E3%83%A2">開発時のメモ</h2>
 <ul>
 <li>
 <p>windowsにpopplerをインストールする。</p>
@@ -430,6 +430,42 @@ code {
 <li>numpyやpandasも含まれてしまうらしい。仮想環境を変えて、必要なモジュールのみpip installしなおす。</li>
 <li><a href="https://qiita.com/napinoco/items/068ce8ef6ef4309966b1">この通り</a>にしました。</li>
 </ul>
+</li>
+</ul>
+<h2 id="poppler%E3%82%92pyinstaller%E3%81%AB%E5%90%AB%E3%82%81%E3%82%8B%E3%81%AB%E3%81%AF">popplerをpyinstallerに含めるには</h2>
+<ul>
+<li>
+<p>popplerをまるごと<code>~~~.py</code>と同じフォルダに入れる。</p>
+</li>
+<li>
+<p>pythonのスクリプト内で、popplerフォルダへの環境変数を通す。リンク１を参考に。</p>
+</li>
+<li>
+<p><code>pdf2image.convert_from_path(outputfile , popplerpath)</code>を指定する。
+<code>pdf2image.convert_from_path('path/to/pdf',poppler_path=r&quot;path\to\poppler\bin&quot;) </code></p>
+</li>
+<li>
+<p>以下のコードで、一回コンパイルしてみる。</p>
+<ul>
+<li><code>--add data</code>で、<code>~~~.py</code>から見たpopplerフォルダのの相対パスを指定する</li>
+<li><code>--onefile</code>はうまくいかないらしいので、<code>--onedir</code>にする。</li>
+</ul>
+</li>
+</ul>
+<pre class="hljs"><code><div>pyinstaller --onedir --additional-hooks-dir hooks  --add-data &quot;poppler-21.03.0/*;./poppler&quot;   pdf2pptx_win.py 
+</div></code></pre>
+<ul>
+<li>
+<p>ですが、まだこれだとうまくいかない！作成された.exeからみて、<code>poppler/bin</code>のフォルダがどこにあるかをみる。</p>
+</li>
+<li>
+<p>それにあわせて、環境変数のパスと、<code>pdf2image.convert_from_path(outputfile , popplerpath)</code>のpoppler pathを修正する。</p>
+</li>
+<li>
+<p>以下のサイトが参考になった。</p>
+</li>
+<li>
+<p><a href="https://stackoverflow.com/questions/66303806/how-do-i-include-poppler-to-pyinstaller-generated-exe-when-using-pdf2image">リンク１</a></p>
 </li>
 </ul>
 

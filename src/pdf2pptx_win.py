@@ -1,4 +1,4 @@
-## pyinstaller --onefile --additional-hooks-dir hooks main.py
+## ウィンドウズでコンパイルする用のコード。単品では動かない。
 
 
 import sys
