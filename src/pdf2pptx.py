@@ -1,4 +1,4 @@
-## pyinstaller --onefile --additional-hooks-dir hooks main.py
+## pyinstaller --onefile --additional-hooks-dir hooks pdf2pptx.py
 
 
 import sys
