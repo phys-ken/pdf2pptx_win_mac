@@ -5,8 +5,7 @@ PDF to PPTX Converter開発プロジェクトへの参加を検討されてい�
 ## 開発環境のセットアップ
 
 ### 前提条件
-- Node.js (v14以上)
-- npm (v6以上) またはYarn
+- Python 3.8以上
 - Git
 - 開発用エディタ (Visual Studio Code推奨)
 
@@ -19,33 +18,33 @@ git clone https://github.com/phys-ken/pdf2pptx_win_mac.git
 # プロジェクトディレクトリに移動
 cd pdf2pptx_win_mac
 
+# 仮想環境を作成
+python -m venv venv
+
+# 仮想環境を有効化（Windowsの場合）
+venv\Scripts\activate
+
+# 仮想環境を有効化（macOS/Linuxの場合）
+# source venv/bin/activate
+
 # 依存パッケージのインストール
-npm install
-# または
-yarn install
+pip install -r requirements.txt
 ```
 
 ### 開発用コマンド
 
 ```bash
-# 開発モードでアプリケーションを起動
-npm run dev
+# GUIアプリケーションを実行
+python src/pdf2pptx_gui.py
 
-# ビルド（開発用）
-npm run build:dev
+# コマンドラインから変換を実行
+python src/pdf_converter.py <PDFファイルパス>
 
-# ビルド（本番用）
-npm run build
+# テストを実行
+python -m unittest discover -s src/tests
 
-# パッケージング（プラットフォーム別）
-npm run package:mac
-npm run package:win
-
-# リント
-npm run lint
-
-# テスト
-npm run test
+# 実行ファイルをビルド
+python build.py
 ```
 
 ## プロジェクト構造
@@ -180,6 +179,60 @@ pdf2pptx_win_mac/
 ### 定期ミーティング
 
 コントリビューターとのミーティングは隔週水曜日に開催されています。参加を希望する場合は、GitHubのディスカッションで詳細をご確認ください。
+
+## アプリケーションのビルド方法
+
+PDF to PPTX Converterは、PyInstallerを使用してスタンドアロンの実行ファイルにビルドできます。ビルドプロセスは`build.py`スクリプトを使って自動化されています。
+
+### ビルド前準備
+
+1. 仮想環境をセットアップします：
+
+```bash
+# 仮想環境を作成
+python -m venv venv
+
+# Windows環境で仮想環境を有効化
+.\venv\Scripts\Activate.ps1
+# または、Command Promptの場合：
+# .\venv\Scripts\activate.bat
+
+# macOS/Linux環境で仮想環境を有効化
+# source venv/bin/activate
+
+# 必要なパッケージをインストール
+pip install -r requirements.txt
+
+# ビルドに必要なPyInstallerをインストール
+pip install pyinstaller
+```
+
+### ビルド実行
+
+セットアップが完了したら、以下のコマンドでビルドを実行します：
+
+```bash
+python build.py
+```
+
+ビルドが成功すると、`dist`フォルダに`pdf2pptx_converter.exe`（Windows）または`pdf2pptx_converter`（macOS/Linux）が作成されます。
+
+### ビルド設定のカスタマイズ
+
+デフォルトの設定をカスタマイズする場合は、`build.py`ファイルを編集します：
+
+- アプリケーション名：`app_name`変数を変更
+- アイコン：`resources`フォルダに`app_icon.ico`ファイルを配置（Windows）または`app_icon.icns`（macOS）
+- その他のPyInstallerオプション：`cmd`リストに追加パラメータを追加
+
+### ビルドのトラブルシューティング
+
+ビルド中に問題が発生した場合：
+
+1. PyInstallerのバージョンが最新であることを確認
+2. 必要なすべての依存関係がインストールされていることを確認
+3. `build`フォルダを削除して再試行
+4. 詳細なデバッグ出力を得るには、`build.py`の`subprocess.run`呼び出しに`capture_output=False`を追加
 
 ---
 

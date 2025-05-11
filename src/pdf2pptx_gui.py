@@ -115,7 +115,10 @@ class PDF2PPTXApp(TkinterDnD.Tk):
         self.minsize(500, 350)
         
         # アプリアイコン設定
-        # self.iconbitmap("resources/icon.ico")  # アイコンがある場合
+        icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                "resources", "app_icon.ico")
+        if os.path.exists(icon_path):
+            self.iconbitmap(icon_path)
         
         # 変換エンジン
         self.converter = PDFConverter()
@@ -124,6 +127,7 @@ class PDF2PPTXApp(TkinterDnD.Tk):
         self.pdf_path = None
         self.output_folder = None
         self.conversion_in_progress = False
+        self.conversion_thread = None
         
         # UI作成
         self._create_widgets()
@@ -131,6 +135,9 @@ class PDF2PPTXApp(TkinterDnD.Tk):
         # アプリケーション全体のドロップターゲット登録
         self.drop_target_register(DND_FILES)
         self.dnd_bind('<<Drop>>', self._on_app_drop)
+        
+        # 終了時の処理を設定
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
     
     def _create_widgets(self):
         """ウィジェットの作成"""
@@ -202,6 +209,11 @@ class PDF2PPTXApp(TkinterDnD.Tk):
     
     def _on_file_drop(self, file_path):
         """ファイルがドロップされたときの処理"""
+        # 変換中は新しいファイルを受け付けない
+        if self.conversion_in_progress:
+            messagebox.showinfo("通知", "変換中です。しばらくお待ちください。")
+            return
+            
         # Windowsでは余分な{}や引用符が含まれることがある
         if isinstance(file_path, str):
             if file_path.startswith("{") and file_path.endswith("}"):
@@ -259,15 +271,15 @@ class PDF2PPTXApp(TkinterDnD.Tk):
         self.progress["value"] = 0
         
         # 変換処理を別スレッドで実行
-        thread = threading.Thread(target=self._convert_pdf_thread)
-        thread.daemon = True
-        thread.start()
+        self.conversion_thread = threading.Thread(target=self._convert_pdf_thread)
+        self.conversion_thread.daemon = True
+        self.conversion_thread.start()
     
     def _convert_pdf_thread(self):
         """別スレッドでPDF変換を実行"""
         try:
             # 変換実行
-            self._update_status("開始", "変換を開始します...")
+            self._update_status("開始", "変換を開始します...", 0)
             pptx_path, images_folder = self.converter.convert_pdf_to_pptx(
                 self.pdf_path,
                 self.output_folder,
@@ -291,12 +303,38 @@ class PDF2PPTXApp(TkinterDnD.Tk):
                 ))
             else:
                 # 失敗
-                self._update_status("エラー", "変換に失敗しました。")
-                
+                self._update_status("エラー", "変換に失敗しました。", None)
+                self.after(0, lambda: messagebox.showerror(
+                    "変換失敗", 
+                    "PDFの変換に失敗しました。ファイルが破損しているか、サポートされていない形式の可能性があります。"
+                ))
         except Exception as e:
+            # エラーメッセージをユーザーフレンドリーにする
+            error_msg = str(e)
+            user_friendly_msg = error_msg
+            
+            # 特定のエラーメッセージに対するわかりやすい説明
+            if "value must be an integral type" in error_msg:
+                user_friendly_msg = (
+                    "PDFのサイズ形式に問題があります。\n"
+                    "可能であれば別のPDF編集ソフトでPDFを開き直して保存してから再試行してください。"
+                )
+            elif "password required" in error_msg.lower():
+                user_friendly_msg = "パスワード付きPDFファイルは処理できません。パスワードを解除してから再試行してください。"
+            elif "not a PDF file" in error_msg:
+                user_friendly_msg = "選択されたファイルは有効なPDFファイルではありません。"
+            elif "memory" in error_msg.lower():
+                user_friendly_msg = "メモリ不足エラーが発生しました。PDFのサイズが大きすぎる可能性があります。"
+            elif "permission" in error_msg.lower():
+                user_friendly_msg = "ファイルの読み取りまたは書き込み権限がありません。"
+            
             # エラー表示
-            self.after(0, lambda: messagebox.showerror("エラー", f"変換中にエラーが発生しました:\n{str(e)}"))
-            self._update_status("エラー", f"エラー: {str(e)}")
+            self.after(0, lambda: messagebox.showerror(
+                "変換エラー", 
+                f"PDFの変換中に問題が発生しました:\n\n{user_friendly_msg}\n\n"
+                f"技術的詳細:\n{error_msg}"
+            ))
+            self._update_status("エラー", f"エラー: {user_friendly_msg}")
         
         finally:
             # UI状態の復元
@@ -316,9 +354,19 @@ class PDF2PPTXApp(TkinterDnD.Tk):
     def _reset_ui(self):
         """UI状態のリセット"""
         self.conversion_in_progress = False
+        self.conversion_thread = None
         self.convert_btn.config(state=tk.NORMAL)
         self.pdf_btn.config(state=tk.NORMAL)
         self.output_btn.config(state=tk.NORMAL)
+    
+    def _on_close(self):
+        """アプリケーション終了時の処理"""
+        if self.conversion_in_progress:
+            if messagebox.askyesno("確認", "変換処理が実行中です。本当に終了しますか？"):
+                # 終了を強制する
+                self.quit()
+        else:
+            self.quit()
 
 
 def main():

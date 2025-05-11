@@ -14,7 +14,7 @@ __pycache__/
 *$py.class
 
 # Distribution / packaging
-dist/
+# dist/ -- コメントアウトしてdistフォルダをリポジトリに含める
 dist_win/
 dist_mac/
 build/

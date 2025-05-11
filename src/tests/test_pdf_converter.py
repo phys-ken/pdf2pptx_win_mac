@@ -21,9 +21,10 @@ class TestPDFConverter(unittest.TestCase):
         self.converter = PDFConverter()
         self.temp_dir = tempfile.mkdtemp()
         
-        # テスト用のPDFファイルパス (実際のテストでは存在するPDFファイルを指定)
-        # 注意: このファイルは実際に存在する必要があります
-        self.test_pdf_path = None  # テスト実行時に設定
+        # テスト用の空のPDFファイル（実際のテストでは存在するPDFファイルが必要）
+        self.test_pdf_path = os.path.join(self.temp_dir, "test.pdf")
+        with open(self.test_pdf_path, "w") as f:
+            f.write("PDF test file (not a real PDF)")
     
     def tearDown(self):
         """テスト後のクリーンアップ"""
@@ -39,18 +40,32 @@ class TestPDFConverter(unittest.TestCase):
     
     def test_setup_temp_folder(self):
         """一時フォルダ設定のテスト"""
-        if self.test_pdf_path:
-            self.converter._setup_temp_folder(self.test_pdf_path)
-            self.assertTrue(os.path.exists(self.converter.temp_folder))
-            self.assertTrue(os.path.isdir(self.converter.temp_folder))
+        self.converter._setup_temp_folder(self.test_pdf_path)
+        self.assertTrue(os.path.exists(self.converter.temp_folder))
+        self.assertTrue(os.path.isdir(self.converter.temp_folder))
     
     def test_cleanup_temp_folder(self):
         """一時フォルダ削除のテスト"""
-        if self.test_pdf_path:
-            self.converter._setup_temp_folder(self.test_pdf_path)
-            temp_folder = self.converter.temp_folder
-            self.converter._cleanup_temp_folder()
-            self.assertFalse(os.path.exists(temp_folder))
+        self.converter._setup_temp_folder(self.test_pdf_path)
+        temp_folder = self.converter.temp_folder
+        self.converter._cleanup_temp_folder()
+        self.assertFalse(os.path.exists(temp_folder))
+    
+    def test_invalid_file_extension(self):
+        """無効なファイル拡張子のテスト"""
+        # 拡張子なしのファイル
+        invalid_file = os.path.join(self.temp_dir, "invalid_file")
+        with open(invalid_file, "w") as f:
+            f.write("Not a PDF")
+        
+        with self.assertRaises(ValueError):
+            self.converter.convert_pdf_to_pptx(invalid_file)
+    
+    def test_file_not_found(self):
+        """存在しないファイルのテスト"""
+        non_existent_file = os.path.join(self.temp_dir, "nonexistent.pdf")
+        with self.assertRaises(FileNotFoundError):
+            self.converter.convert_pdf_to_pptx(non_existent_file)
 
 
 def manual_test_with_file(pdf_path):

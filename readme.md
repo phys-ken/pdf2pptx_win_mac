@@ -11,11 +11,11 @@ PDFファイルをPowerPointプレゼンテーションに変換するシンプ�
 
 ## インストール
 
-[リリースページ](https://github.com/phys-ken/pdf2pptx_win_mac/releases)から最新版をダウンロードして実行するだけです。
+[リリースページ](https://github.com/phys-ken/pdf2pptx_win_mac/releases)から最新版をダウンロードし、解凍してください。解凍したフォルダ内の`dist`フォルダに実行ファイル（`pdf2pptx_converter.exe`）があります。このファイルをダブルクリックするだけで使用できます。
 
 ## 詳細情報
 
-詳細な使い方やプロジェクトの概要については、[ドキュメント](docs/overview.md)をご覧ください。
+詳細な使い方やプロジェクトの概要については、[ドキュメント](docs/user-guide.md)をご覧ください。
 
 ## ライセンス
 

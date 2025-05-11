@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # GUIモジュールのインポート
-from pdf2pptx_gui import PDF2PPTXApp
+from pdf2pptx_gui import PDF2PPTXApp, DragDropFrame
 from pdf_converter import PDFConverter
 
 
@@ -46,7 +46,7 @@ class TestPDF2PPTXGUIFunctions(unittest.TestCase):
         filedialog_mock.askopenfilename.return_value = self.test_pdf_path
         
         # テスト対象クラスの準備
-        with patch('pdf2pptx_gui.tk.Tk'):
+        with patch('pdf2pptx_gui.TkinterDnD.Tk'):
             app = PDF2PPTXApp()
             app.pdf_path = None
             app.pdf_label = MagicMock()
@@ -68,7 +68,7 @@ class TestPDF2PPTXGUIFunctions(unittest.TestCase):
         filedialog_mock.askdirectory.return_value = self.temp_dir
         
         # テスト対象クラスの準備
-        with patch('pdf2pptx_gui.tk.Tk'):
+        with patch('pdf2pptx_gui.TkinterDnD.Tk'):
             app = PDF2PPTXApp()
             
             with patch('pdf2pptx_gui.messagebox') as messagebox_mock:
@@ -88,11 +88,11 @@ class TestPDF2PPTXGUIFunctions(unittest.TestCase):
         converter_mock.return_value = converter_instance
         converter_instance.convert_pdf_to_pptx.return_value = (
             os.path.join(self.temp_dir, "test.pptx"),
-            os.path.join(self.temp_dir, "test_figs")
+            os.path.join(self.temp_dir, "test_images")
         )
         
         # テスト用データ準備
-        with patch('pdf2pptx_gui.tk.Tk'):
+        with patch('pdf2pptx_gui.TkinterDnD.Tk'):
             app = PDF2PPTXApp()
             app.pdf_path = self.test_pdf_path
             app.output_folder = self.temp_dir
@@ -101,6 +101,7 @@ class TestPDF2PPTXGUIFunctions(unittest.TestCase):
             app.convert_btn = MagicMock()
             app.pdf_btn = MagicMock()
             app.output_btn = MagicMock()
+            app.converter = converter_instance
             
             # スレッドをモック化して同期的に実行
             with patch('pdf2pptx_gui.threading.Thread') as thread_mock:
@@ -117,6 +118,25 @@ class TestPDF2PPTXGUIFunctions(unittest.TestCase):
                 app.convert_btn.config.assert_called_with(state="disabled")
                 app.pdf_btn.config.assert_called_with(state="disabled")
                 app.output_btn.config.assert_called_with(state="disabled")
+    
+    @patch('pdf2pptx_gui.TkinterDnD.Tk')
+    def test_drag_drop_frame(self, tk_mock):
+        """ドラッグ＆ドロップフレームのテスト"""
+        # コールバック関数のモック
+        callback_mock = MagicMock()
+        
+        # フレーム作成
+        frame = DragDropFrame(tk_mock, callback_mock)
+        
+        # イベントモック
+        drop_event = MagicMock()
+        drop_event.data = self.test_pdf_path
+        
+        # ドロップイベント発火
+        frame._on_drop(drop_event)
+        
+        # コールバックが呼ばれたか検証
+        callback_mock.assert_called_once_with(self.test_pdf_path)
 
 
 def manual_full_test():
