@@ -1,0 +1,301 @@
+"""
+PDFをPPTXに変換するためのモジュール
+PyMuPDFを使用してPDFを画像に変換し、python-pptxを使用してPPTXに変換
+"""
+import os
+import fitz  # PyMuPDF
+import shutil
+from pptx import Presentation
+from pptx.util import Pt
+from PIL import Image
+
+
+# PowerPointのサイズ制限（EMU単位）
+MIN_SLIDE_SIZE = 914400  # 1インチ
+MAX_SLIDE_SIZE = 51206400  # 56インチ
+
+class PDFConverter:
+    """PDFをPPTXに変換するクラス"""
+    
+    def __init__(self):
+        """初期化"""
+        self.temp_folder = None
+        self.output_folder = None
+        self.image_format = "jpg"
+        self.dpi = 300  # 画質（高いほど良い品質だが、ファイルサイズが大きくなる）
+        
+    def convert_pdf_to_pptx(self, pdf_path, output_folder=None, callback=None):
+        """
+        PDFをPPTXに変換するメイン関数
+        
+        Args:
+            pdf_path (str): 変換するPDFファイルのパス
+            output_folder (str, optional): 出力先フォルダ（指定がない場合はPDFと同じフォルダ）
+            callback (function, optional): 進捗報告用のコールバック関数
+            
+        Returns:
+            tuple: (pptx_path, images_folder) - 作成されたPPTXのパスと画像フォルダのパス
+        """
+        # 出力先フォルダの設定
+        if not output_folder:
+            pdf_dir = os.path.dirname(pdf_path)
+            pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+            output_folder = pdf_dir
+        
+        # 画像の一時保存フォルダ作成
+        self._setup_temp_folder(pdf_path)
+        
+        try:
+            # PDFを画像に変換
+            image_paths = self._convert_pdf_to_images(pdf_path, callback)
+            
+            if not image_paths:
+                if callback:
+                    callback("エラー", "PDFの変換に失敗しました。")
+                return None, None
+            
+            # 画像からPPTXを作成
+            pptx_path = self._create_pptx(image_paths, pdf_path, output_folder, callback)
+            
+            # 画像フォルダの保存（PDFの名前_figs）
+            pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+            images_folder = os.path.join(output_folder, f"{pdf_name}_figs")
+            
+            if os.path.exists(images_folder):
+                shutil.rmtree(images_folder)
+            
+            shutil.copytree(self.temp_folder, images_folder)
+            
+            return pptx_path, images_folder
+            
+        except Exception as e:
+            error_message = str(e)
+            # 整数型エラーの特別処理
+            if "value must be an integral type" in error_message:
+                error_detail = "サイズ設定で浮動小数点が整数型に変換できませんでした。"
+                if callback:
+                    callback("エラー", f"変換中にエラーが発生しました: {error_detail}\n技術的な詳細: {error_message}")
+            else:
+                if callback:
+                    callback("エラー", f"変換中にエラーが発生しました: {error_message}")
+            raise e
+        finally:
+            # 一時フォルダの削除
+            self._cleanup_temp_folder()
+    
+    def _setup_temp_folder(self, pdf_path):
+        """一時フォルダの設定"""
+        pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+        temp_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_images")
+        
+        if os.path.exists(temp_folder):
+            shutil.rmtree(temp_folder)
+        
+        os.makedirs(temp_folder)
+        self.temp_folder = temp_folder
+    
+    def _cleanup_temp_folder(self):
+        """一時フォルダの削除"""
+        if self.temp_folder and os.path.exists(self.temp_folder):
+            try:
+                shutil.rmtree(self.temp_folder)
+            except Exception:
+                pass
+    
+    def _convert_pdf_to_images(self, pdf_path, callback=None):
+        """
+        PDFを画像に変換する
+        
+        Args:
+            pdf_path (str): 変換するPDFファイルのパス
+            callback (function, optional): 進捗報告用のコールバック関数
+            
+        Returns:
+            list: 生成された画像ファイルのパスリスト
+        """
+        image_paths = []
+        
+        try:
+            # PDFファイルを開く
+            pdf_document = fitz.open(pdf_path)
+            total_pages = len(pdf_document)
+            
+            if callback:
+                callback("開始", f"PDFの変換を開始します。全{total_pages}ページ")
+            
+            # 各ページを画像に変換
+            for page_num, page in enumerate(pdf_document):
+                # 進捗報告
+                if callback:
+                    progress = (page_num + 1) / total_pages * 100
+                    callback("進捗", f"ページ {page_num + 1}/{total_pages} 変換中", progress)
+                
+                # ページをPIL画像として取得
+                pix = page.get_pixmap(matrix=fitz.Matrix(self.dpi / 72, self.dpi / 72))
+                
+                # 画像ファイル名
+                image_path = os.path.join(self.temp_folder, f"page_{page_num + 1:03d}.{self.image_format}")
+                
+                # 画像として保存
+                pix.save(image_path)
+                image_paths.append(image_path)
+            
+            if callback:
+                callback("完了", f"全{total_pages}ページの画像変換が完了しました")
+            
+            return image_paths
+            
+        except Exception as e:
+            if callback:
+                callback("エラー", f"PDFの画像変換中にエラーが発生しました: {str(e)}")
+            raise e
+    
+    def _create_pptx(self, image_paths, pdf_path, output_folder, callback=None):
+        """
+        画像からPPTXを作成する
+        
+        Args:
+            image_paths (list): 画像ファイルのパスのリスト
+            pdf_path (str): 元のPDFファイルのパス（ファイル名取得用）
+            output_folder (str): 出力先フォルダ
+            callback (function, optional): 進捗報告用のコールバック関数
+            
+        Returns:
+            str: 作成されたPPTXファイルのパス
+            
+        Note:
+            「value must be an integral type」エラーが発生した場合は、
+            スライドサイズや画像サイズの設定時に浮動小数点数が整数に変換できない問題です。
+            int(round(float_value))で解決しています。
+        """
+        try:
+            if callback:
+                callback("開始", "PowerPointファイルの作成を開始します")
+            
+            # ファイル名の設定
+            pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+            pptx_path = os.path.join(output_folder, f"{pdf_name}.pptx")
+            
+            # Presentationオブジェクトの作成
+            ppt = Presentation()
+            
+            # 最初の画像からスライドのサイズを設定
+            if image_paths:
+                with Image.open(image_paths[0]) as img:
+                    width, height = img.size
+                    
+                    try:
+                        # ポイントに変換 (1ポイント = 1/72インチ)
+                        width_pt = Pt(width)
+                        height_pt = Pt(height)
+                        
+                        # PowerPointのサイズ制限をチェック
+                        if width_pt > MAX_SLIDE_SIZE or height_pt > MAX_SLIDE_SIZE:
+                            # アスペクト比を維持しながら縮小
+                            scale_factor = min(
+                                MAX_SLIDE_SIZE / width_pt if width_pt > MAX_SLIDE_SIZE else 1,
+                                MAX_SLIDE_SIZE / height_pt if height_pt > MAX_SLIDE_SIZE else 1
+                            )
+                            width_pt = width_pt * scale_factor
+                            height_pt = height_pt * scale_factor
+                            
+                            if callback:
+                                callback("警告", f"画像サイズが大きすぎるため、自動的に{scale_factor:.2f}倍に縮小されました")
+                        
+                        if width_pt < MIN_SLIDE_SIZE or height_pt < MIN_SLIDE_SIZE:
+                            # アスペクト比を維持しながら拡大
+                            scale_factor = max(
+                                MIN_SLIDE_SIZE / width_pt if width_pt < MIN_SLIDE_SIZE else 1,
+                                MIN_SLIDE_SIZE / height_pt if height_pt < MIN_SLIDE_SIZE else 1
+                            )
+                            width_pt = width_pt * scale_factor
+                            height_pt = height_pt * scale_factor
+                            
+                            if callback:
+                                callback("警告", f"画像サイズが小さすぎるため、自動的に{scale_factor:.2f}倍に拡大されました")
+                    except Exception as calc_err:
+                        if callback:
+                            callback("警告", f"サイズ計算でエラーが発生しました。標準サイズを使用します: {str(calc_err)}")
+                        # 計算に失敗した場合は標準的な値を使用
+                        width_pt = 9144000  # 10インチ
+                        height_pt = 6858000  # 7.5インチ
+                    
+                    # スライドのサイズを画像に合わせる（整数に変換）
+                    try:
+                        # 浮動小数点数を最も近い整数に丸める
+                        ppt.slide_width = int(round(width_pt))
+                        ppt.slide_height = int(round(height_pt))
+                    except Exception as size_err:
+                        if callback:
+                            callback("警告", f"スライドサイズの設定に問題があります。標準サイズを使用します: {str(size_err)}")
+                        # 失敗した場合は標準サイズ (4:3) を使用
+                        ppt.slide_width = 9144000  # 10インチ
+                        ppt.slide_height = 6858000  # 7.5インチ
+            
+            # 空白のスライドレイアウト
+            blank_layout = ppt.slide_layouts[6]
+            
+            # 各画像をスライドに配置
+            total_images = len(image_paths)
+            for idx, img_path in enumerate(image_paths):
+                # 進捗報告
+                if callback:
+                    progress = (idx + 1) / total_images * 100
+                    callback("進捗", f"スライド {idx + 1}/{total_images} 作成中", progress)
+                
+                # スライド作成
+                slide = ppt.slides.add_slide(blank_layout)
+                
+                # 画像の挿入
+                try:
+                    with Image.open(img_path) as img:
+                        # 画像をスライドいっぱいに表示（位置調整なし）
+                        slide_width = ppt.slide_width
+                        slide_height = ppt.slide_height
+                        
+                        # 画像を挿入（左上から）- 値は整数であることを保証
+                        pic = slide.shapes.add_picture(
+                            img_path, 
+                            0, 0, 
+                            width=int(round(slide_width)), 
+                            height=int(round(slide_height))
+                        )
+                except Exception as img_err:
+                    if callback:
+                        callback("警告", f"スライド {idx + 1} の画像読み込みに問題があります: {str(img_err)}")
+                    # それでも続行（空のスライドになる可能性あり）
+                    continue
+            
+            # PPTXを保存
+            ppt.save(pptx_path)
+            
+            if callback:
+                callback("完了", f"PowerPointファイル {pptx_path} を作成しました")
+            
+            return pptx_path
+            
+        except Exception as e:
+            if callback:
+                callback("エラー", f"PowerPoint作成中にエラーが発生しました: {str(e)}")
+            raise e
+
+
+# 単体テスト用
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) > 1:
+        pdf_path = sys.argv[1]
+        converter = PDFConverter()
+        
+        def print_progress(status, message, progress=None):
+            if progress is not None:
+                print(f"{status}: {message} - {progress:.1f}%")
+            else:
+                print(f"{status}: {message}")
+        
+        pptx_path, images_folder = converter.convert_pdf_to_pptx(pdf_path, callback=print_progress)
+        print(f"PPTXを作成しました: {pptx_path}")
+        print(f"画像フォルダ: {images_folder}")
+    else:
+        print("使用法: python pdf_converter.py <PDFファイルパス>")
