@@ -19,4 +19,4 @@ PDFファイルをPowerPointプレゼンテーションに変換するシンプ�
 
 ## ライセンス
 
-MITライセンスの下で公開されています。
+MITライセンスの下で公開されています。サードパーティのライブラリについては[THIRDPARTY-LICENSES.md](THIRDPARTY-LICENSES.md)を参照してください。

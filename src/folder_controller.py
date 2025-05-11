@@ -1,9 +1,11 @@
 """
 フォルダ構造を管理するためのモジュール
+重複Markdownファイルを整理し、必要最小限の構成に整理します
 """
 import os
 import shutil
 import sys
+import glob
 
 
 def create_folders():
@@ -13,8 +15,7 @@ def create_folders():
         'resources',
         'src',
         'src/tests',
-        'src/hooks',
-        'docs',  # ドキュメントフォルダを追加
+        'docs',  # ドキュメントフォルダ
     ]
 
     # プロジェクトのルートディレクトリを取得
@@ -39,7 +40,6 @@ def move_legacy_files():
         os.path.join(src_dir, 'pdf2pptx.py'),
         os.path.join(src_dir, 'pdf2pptx_win.spec'),
         os.path.join(src_dir, 'pdf2pptx.spec'),
-        # hooks/ フォルダ内のファイルはそのまま残しておく（必要な場合があるため）
     ]
     
     for file_path in legacy_files:
@@ -56,15 +56,17 @@ def move_legacy_files():
 def cleanup_folders():
     """不要なフォルダを削除する"""
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    src_dir = os.path.join(root_dir, 'src')
+    
     folders_to_remove = [
         os.path.join(root_dir, 'dist'),
         os.path.join(root_dir, 'dist_win'),
         os.path.join(root_dir, 'dist_mac'),
         os.path.join(root_dir, 'build'),
         os.path.join(root_dir, '__pycache__'),
-        os.path.join(root_dir, 'output'),  # outputフォルダを削除
-        os.path.join(src_dir, 'figtmpfig'),  # 一時的な画像フォルダを削除
-        os.path.join(src_dir, 'hooks'),  # hooksフォルダを削除
+        os.path.join(root_dir, 'output'),
+        os.path.join(src_dir, 'figtmpfig'),
+        os.path.join(src_dir, 'hooks'),
     ]
     
     for folder in folders_to_remove:
@@ -76,22 +78,227 @@ def cleanup_folders():
                 print(f"フォルダの削除に失敗: {folder} - {e}")
 
 
-def remove_old_readme():
-    """古いreadme.mdを削除して新しいREADME.mdを作成する"""
+def organize_markdown_files():
+    """Markdownファイルを整理し、重複を解消する"""
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    docs_dir = os.path.join(root_dir, 'docs')
+    
+    # 1. すべてのMarkdownファイルを収集 (READMEファイル以外)
+    md_files = []
+    for root, _, files in os.walk(root_dir):
+        for file in files:
+            if file.lower().endswith('.md') and file.lower() != 'readme.md':
+                md_files.append(os.path.join(root, file))
+    
+    print(f"検出されたMarkdownファイル (README除く): {len(md_files)}個")
+    for md_file in md_files:
+        print(f" - {md_file}")
+    
+    # 3. docsフォルダ内のファイルを整理
+    docs_md_files = glob.glob(os.path.join(docs_dir, '*.md'))
+    
+    # 3.1. 既存のユーザーガイド関連ファイルを検出
+    user_guide_files = [f for f in docs_md_files if any(x in os.path.basename(f).lower() 
+                                                      for x in ['user', 'guide', 'manual', 'usage'])]
+    
+    # 3.2. 技術情報関連ファイルを検出
+    tech_files = [f for f in docs_md_files if any(x in os.path.basename(f).lower() 
+                                                for x in ['tech', 'detail', 'overview'])]
+    
+    # 3.3. FAQ関連ファイルを検出
+    faq_files = [f for f in docs_md_files if 'faq' in os.path.basename(f).lower()]
+    
+    # 4. ファイルを統合する
+    if user_guide_files:
+        create_unified_user_guide(user_guide_files, docs_dir)
+    
+    if tech_files:
+        create_unified_tech_doc(tech_files, docs_dir)
+    
+    if faq_files:
+        create_unified_faq(faq_files, docs_dir)
+
+
+def create_unified_user_guide(source_files, docs_dir):
+    """ユーザーガイドを統合する"""
+    output_path = os.path.join(docs_dir, 'user-guide.md')
+    
+    content = """# PDF to PPTX Converter - ユーザーガイド
+
+## 目次
+1. インストール方法
+2. 基本的な使い方
+3. オプション機能
+4. よくある問題と解決方法
+
+"""
+    
+    # 既存のファイルから内容を抽出して統合
+    for file_path in source_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+                content += f"## {os.path.basename(file_path)} からの内容\n\n"
+                content += file_content + "\n\n"
+        except Exception as e:
+            print(f"ファイル読み込みエラー: {file_path} - {e}")
+    
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"統合されたユーザーガイドを作成: {output_path}")
+        
+        # 元のファイルを削除
+        for file_path in source_files:
+            if os.path.exists(file_path) and file_path != output_path:
+                os.remove(file_path)
+                print(f"統合後、元ファイルを削除: {file_path}")
+    except Exception as e:
+        print(f"ユーザーガイド作成エラー: {e}")
+
+
+def create_unified_tech_doc(source_files, docs_dir):
+    """技術文書を統合する"""
+    output_path = os.path.join(docs_dir, 'technical-details.md')
+    
+    content = """# PDF to PPTX Converter - 技術情報
+
+## 目次
+1. システム概要
+2. アーキテクチャ
+3. 使用ライブラリ
+4. 実装の詳細
+
+"""
+    
+    # 既存のファイルから内容を抽出して統合
+    for file_path in source_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+                content += f"## {os.path.basename(file_path)} からの内容\n\n"
+                content += file_content + "\n\n"
+        except Exception as e:
+            print(f"ファイル読み込みエラー: {file_path} - {e}")
+    
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"統合された技術文書を作成: {output_path}")
+        
+        # 元のファイルを削除
+        for file_path in source_files:
+            if os.path.exists(file_path) and file_path != output_path:
+                os.remove(file_path)
+                print(f"統合後、元ファイルを削除: {file_path}")
+    except Exception as e:
+        print(f"技術文書作成エラー: {e}")
+
+
+def create_unified_faq(source_files, docs_dir):
+    """FAQを統合する"""
+    output_path = os.path.join(docs_dir, 'faq.md')
+    
+    content = """# PDF to PPTX Converter - よくある質問
+
+"""
+    
+    # 既存のファイルから内容を抽出して統合
+    for file_path in source_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+                content += file_content + "\n\n"
+        except Exception as e:
+            print(f"ファイル読み込みエラー: {file_path} - {e}")
+    
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"統合されたFAQを作成: {output_path}")
+        
+        # 元のファイルを削除
+        for file_path in source_files:
+            if os.path.exists(file_path) and file_path != output_path:
+                os.remove(file_path)
+                print(f"統合後、元ファイルを削除: {file_path}")
+    except Exception as e:
+        print(f"FAQ作成エラー: {e}")
+
+
+def update_readme():
+    """READMEを更新しつつ、必ず保持する（削除しない）"""
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     old_readme_path = os.path.join(root_dir, 'readme.md')
-    
-    # 古いreadme.mdを削除
-    if os.path.exists(old_readme_path):
-        try:
-            os.remove(old_readme_path)
-            print(f"ファイルを削除: {old_readme_path}")
-        except Exception as e:
-            print(f"ファイルの削除に失敗: {old_readme_path} - {e}")
-    
-    # 新しいREADME.mdを作成
     new_readme_path = os.path.join(root_dir, 'README.md')
-    readme_content = """# PDF to PPTX Converter
+    
+    # まず現在のREADMEをバックアップ (READMEがどちらも存在しない場合に備えて)
+    backup_created = False
+    
+    if os.path.exists(old_readme_path):
+        readme_backup_path = os.path.join(root_dir, 'readme.md.bak')
+        try:
+            shutil.copy2(old_readme_path, readme_backup_path)
+            backup_created = True
+            print(f"readme.mdのバックアップを作成: {readme_backup_path}")
+        except Exception as e:
+            print(f"readme.mdのバックアップ作成失敗: {e}")
+    
+    if os.path.exists(new_readme_path):
+        readme_backup_path = os.path.join(root_dir, 'README.md.bak')
+        try:
+            shutil.copy2(new_readme_path, readme_backup_path)
+            backup_created = True
+            print(f"README.mdのバックアップを作成: {readme_backup_path}")
+        except Exception as e:
+            print(f"README.mdのバックアップ作成失敗: {e}")
+    
+    # 古いreadme.mdが存在し、新しいREADME.mdが存在しない場合は名前を変更
+    if os.path.exists(old_readme_path) and not os.path.exists(new_readme_path):
+        try:
+            shutil.copy2(old_readme_path, new_readme_path)
+            print(f"readme.md から README.md を作成")
+        except Exception as e:
+            print(f"README.md作成失敗: {e}")
+    
+    # 両方存在する場合は統合または選択
+    elif os.path.exists(old_readme_path) and os.path.exists(new_readme_path):
+        try:
+            # ファイルサイズを比較して、より大きい/詳細なファイルを残す
+            old_size = os.path.getsize(old_readme_path)
+            new_size = os.path.getsize(new_readme_path)
+            
+            if old_size > new_size:
+                # 古いファイルの方が大きければそれを使用
+                os.remove(new_readme_path)
+                shutil.copy2(old_readme_path, new_readme_path)
+                print("より詳細なreadme.mdをREADME.mdとして使用")
+            else:
+                # 新しいファイルの方が大きいか同じなら、readme.mdをバックアップ
+                print("既存のREADME.mdを維持し、readme.mdをバックアップ")
+        except Exception as e:
+            print(f"READMEファイル処理エラー: {e}")
+    
+    # バックアップから復元が必要な場合
+    if not os.path.exists(new_readme_path) and backup_created:
+        try:
+            # バックアップファイルパスを検索
+            backup_files = glob.glob(os.path.join(root_dir, '*.md.bak'))
+            if backup_files:
+                latest_backup = max(backup_files, key=os.path.getmtime)
+                shutil.copy2(latest_backup, new_readme_path)
+                print(f"バックアップからREADME.mdを復元: {latest_backup}")
+        except Exception as e:
+            print(f"バックアップからの復元に失敗: {e}")
+    
+    # どうしてもREADME.mdがない場合は新規作成
+    if not os.path.exists(new_readme_path):
+        create_default_readme(new_readme_path)
+
+
+def create_default_readme(readme_path):
+    """デフォルトのREADME.mdを作成する"""
+    content = """# PDF to PPTX Converter
 
 PDFファイルをPowerPointプレゼンテーションに変換するシンプルなツール。各ページを1枚のスライドに配置します。
 
@@ -108,163 +315,19 @@ PDFファイルをPowerPointプレゼンテーションに変換するシンプ�
 
 ## 詳細情報
 
-詳細な使い方やプロジェクトの概要については、[ドキュメント](docs/overview.md)をご覧ください。
+詳細な使い方やプロジェクトの概要については、[ドキュメント](docs/technical-details.md)をご覧ください。
 
 ## ライセンス
 
 MITライセンスの下で公開されています。
 """
     
-    with open(new_readme_path, 'w', encoding='utf-8') as f:
-        f.write(readme_content)
-    
-    print(f"README.md を作成: {new_readme_path}")
-
-
-def create_docs():
-    """docsフォルダにドキュメントファイルを作成する"""
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    docs_dir = os.path.join(root_dir, 'docs')
-    
-    # 概要ドキュメントの作成
-    overview_path = os.path.join(docs_dir, 'overview.md')
-    overview_content = """# PDF to PPTX Converter - 概要
-
-## プロジェクトについて
-
-このプロジェクトは、PDFファイルを簡単にPowerPointプレゼンテーション(PPTX)に変換するためのツールです。元々はpopplerに依存したCLIツールでしたが、現在はPyMuPDFを使用し、使いやすいGUIを実装しています。
-
-## 技術仕様
-
-- **使用言語**: Python 3.8以上
-- **主要ライブラリ**:
-  - PyMuPDF (fitz): PDF処理
-  - python-pptx: PowerPointファイル生成
-  - tkinter, tkinterdnd2: GUIインターフェース
-  - Pillow: 画像処理
-
-## 開発背景
-
-教育現場や業務でPDFをPowerPointに変換する必要性が頻繁にあることから開発されました。既存のソリューションは複雑であったり、有料であったりしたため、シンプルで無料のツールを目指しました。
-
-## 機能の詳細
-
-- PDFの各ページをJPEG画像に変換
-- 画像をPowerPointスライドとして配置
-- スライドサイズをPDFのサイズに合わせて自動調整
-- 画像ファイルも別途保存可能
-
-## プロジェクト構成
-
-- **src/**: ソースコード
-  - pdf_converter.py: PDF変換エンジン
-  - pdf2pptx_gui.py: GUIアプリケーション
-  - folder_controller.py: プロジェクト管理スクリプト
-- **docs/**: ドキュメント
-- **legacy/**: 以前のバージョンのコード
-- **resources/**: アイコンなどのリソース
-
-## 今後の展望
-
-- バッチ処理機能の追加
-- 変換オプションの拡充（解像度調整など）
-- ダークモード対応
-"""
-    
-    with open(overview_path, 'w', encoding='utf-8') as f:
-        f.write(overview_content)
-    
-    print(f"overview.md を作成: {overview_path}")
-    
-    # 操作マニュアルの作成
-    manual_path = os.path.join(docs_dir, 'manual.md')
-    manual_content = """# PDF to PPTX Converter - 操作マニュアル
-
-## インストール方法
-
-1. [リリースページ](https://github.com/phys-ken/pdf2pptx_win_mac/releases)から最新版の実行ファイルをダウンロード
-2. ダウンロードしたZIPファイルを任意の場所に展開
-3. `pdf2pptx_gui.exe` をダブルクリックして起動
-
-## 基本的な使い方
-
-### PDFファイルの変換
-
-1. アプリケーションを起動する
-2. 以下のいずれかの方法でPDFファイルを選択:
-   - PDFファイルをアプリケーションウィンドウにドラッグ＆ドロップ
-   - 「PDFファイルを選択」ボタンをクリックしてファイル選択ダイアログから選択
-3. 「変換開始」ボタンをクリック
-4. 変換が完了すると、成功メッセージが表示される
-
-### 出力先の指定
-
-デフォルトでは、PDFファイルと同じフォルダに出力されます。
-出力先を変更したい場合:
-
-1. 「出力先を選択 (オプション)」ボタンをクリック
-2. フォルダ選択ダイアログで保存先を指定
-
-## 出力ファイル
-
-変換が完了すると、以下のファイルが生成されます:
-
-- `[PDFファイル名].pptx` - 変換されたPowerPointファイル
-- `[PDFファイル名]_figs` - PDFの各ページの画像が保存されたフォルダ
-
-## よくあるトラブルシューティング
-
-### 実行時にエラーが表示される場合
-
-- .NET Frameworkが最新でない可能性があります。Windows Updateを実行してください。
-- セキュリティソフトがアプリケーションの実行をブロックしている可能性があります。例外設定を確認してください。
-
-### PDFが正しく変換されない
-
-- 非常に大きなサイズのPDFは変換に時間がかかる場合があります。しばらくお待ちください。
-- パスワード保護されたPDFは変換できません。PDFのセキュリティ設定を解除してから変換してください。
-- PDFの内容によっては、画像品質に影響が出ることがあります。
-
-### その他の問題
-
-その他の問題が発生した場合は、[GitHubのIssue](https://github.com/phys-ken/pdf2pptx_win_mac/issues)でご報告ください。
-"""
-    
-    with open(manual_path, 'w', encoding='utf-8') as f:
-        f.write(manual_content)
-    
-    print(f"manual.md を作成: {manual_path}")
-
-
-def create_legacy_md():
-    """legacyフォルダにlegacy.mdファイルを作成する"""
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    legacy_md_path = os.path.join(root_dir, 'legacy', 'legacy.md')
-    
-    content = """# 旧バージョンのPDF2PPTXについて
-
-## 変更点
-- GUIインターフェースの追加
-- Poppler依存からPyMuPDFへの変更
-- フォルダ構成の最適化
-- クリックによるファイル選択の操作性向上
-
-## 旧バージョンの課題
-1. コマンドラインでの操作が必要（ユーザーフレンドリーでない）
-2. Popplerへの依存があり、インストールが複雑
-3. Windows版とMac版で別々の実装が必要
-4. 出力先の指定が毎回必要
-
-## 解決方法
-- PyMuPDFを使用してPDF処理を行うことでPopplerへの依存をなくす
-- tkinterによるシンプルなGUIの実装
-- 出力先のデフォルト設定（PDFと同じフォルダ）
-"""
-    
-    with open(legacy_md_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    
-    print(f"legacy.md を作成: {legacy_md_path}")
+    try:
+        with open(readme_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print(f"新しいREADME.mdを作成しました: {readme_path}")
+    except Exception as e:
+        print(f"README.md作成エラー: {e}")
 
 
 def check_necessary_files():
@@ -287,51 +350,38 @@ def check_necessary_files():
         print("必要なファイルはすべて存在しています。")
 
 
-def create_hooks_file():
-    """hooks/hook-pptx.pyファイルを作成する"""
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    hooks_dir = os.path.join(root_dir, 'src', 'hooks')
-    
-    # hooksディレクトリを作成（すでに作成済みの場合もあるが念のため）
-    if not os.path.exists(hooks_dir):
-        os.makedirs(hooks_dir)
-        print(f"フォルダを作成: {hooks_dir}")
-    
-    # hook-pptx.pyファイルのパス
-    hook_file_path = os.path.join(hooks_dir, 'hook-pptx.py')
-    
-    # hook-pptx.pyの内容
-    hook_content = """# hook-pptx.py
-# PyInstallerのhooks
-from PyInstaller.utils.hooks import collect_data_files
-
-# python-pptxに必要なデータファイルを収集
-datas = collect_data_files('pptx')
-"""
-    
-    # ファイルを書き込み
-    with open(hook_file_path, 'w', encoding='utf-8') as f:
-        f.write(hook_content)
-    
-    print(f"hook-pptx.py を作成: {hook_file_path}")
-
-
 def main():
     """メイン実行関数"""
     print("フォルダ構成の整理を開始します...")
-    # 実行パスの取得と修正（src_dirをグローバル変数として定義）
-    global src_dir
+    
+    # 実行パスの取得と修正
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    global src_dir
     src_dir = os.path.join(root_dir, 'src')
     
+    # 1. READMEファイルの処理を最初に行う（バックアップを作成）
+    update_readme()
+    
+    # 2. 基本的なフォルダ構造の作成
     create_folders()
+    
+    # 3. レガシーファイルの移動
     move_legacy_files()
+    
+    # 4. 不要なフォルダを削除
     cleanup_folders()
-    remove_old_readme()  # readme.mdの削除とREADME.mdの作成
-    create_docs()        # docsフォルダとドキュメントの作成
-    create_legacy_md()
-    create_hooks_file()
+    
+    # 5. Markdownファイルの整理（重複解消）
+    organize_markdown_files()
+    
+    # 6. 必要なファイルの確認
     check_necessary_files()
+    
+    # 7. READMEが正しく存在するか最終確認
+    if not os.path.exists(os.path.join(root_dir, 'README.md')):
+        print("警告: README.mdが見つかりません。再作成します。")
+        create_default_readme(os.path.join(root_dir, 'README.md'))
+    
     print("フォルダ構成の整理が完了しました")
 
 
