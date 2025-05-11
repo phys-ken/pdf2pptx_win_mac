@@ -7,3 +7,47 @@ src/figtmpfig/output_000.jpg
 src/figtmpfig/output_001.jpg
 src/.DS_Store
 src/.DS_Store
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+dist_win/
+dist_mac/
+build/
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Development environment
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+temp_images/
+src/temp_images/
+
+# Windows specific
+Thumbs.db
+desktop.ini
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Project specific
+*.spec
+poppler-*
