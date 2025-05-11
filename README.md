@@ -1,4 +1,4 @@
-# PDF to PPTX Converter
+# simple_pdf2pptx__only_figs
 
 PDFファイルをPowerPoint (PPTX) ファイルに変換するデスクトップアプリケーションです。
 
